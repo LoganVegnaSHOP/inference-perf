@@ -68,6 +68,8 @@ async def parse_sse_stream(
 
     async for chunk in response.content.iter_any():
         buffer += chunk
+        if not _debug_logged and len(buffer) > 50:
+            print(f"SSE_DEBUG raw buffer first 200 bytes: {buffer[:200]}", file=sys.stderr, flush=True)
         while b"\n\n" in buffer:
             message, buffer = buffer.split(b"\n\n", 1)
             output_token_times.append(time.perf_counter())
