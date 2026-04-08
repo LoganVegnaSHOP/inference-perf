@@ -79,8 +79,8 @@ async def parse_sse_stream(
                     try:
                         data = json.loads(data_str)
                         if not _debug_logged:
-                            import logging
-                            logging.getLogger(__name__).info(f"SSE_DEBUG first chunk delta: {data.get('choices', [{}])[0].get('delta', {})}")
+                            import sys
+                            print(f"SSE_DEBUG first chunk: {json.dumps(data)[:500]}", file=sys.stderr, flush=True)
                             _debug_logged = True
                         if content := extract_content(data):
                             output_text += content
