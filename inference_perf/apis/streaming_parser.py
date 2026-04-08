@@ -64,6 +64,7 @@ async def parse_sse_stream(
     output_text = ""
     output_token_times: List[float] = []
     buffer = b""
+    _debug_logged = False
 
     async for chunk in response.content.iter_any():
         buffer += chunk
@@ -77,6 +78,10 @@ async def parse_sse_stream(
                         break
                     try:
                         data = json.loads(data_str)
+                        if not _debug_logged:
+                            import logging
+                            logging.getLogger(__name__).info(f"SSE_DEBUG first chunk delta: {data.get('choices', [{}])[0].get('delta', {})}")
+                            _debug_logged = True
                         if content := extract_content(data):
                             output_text += content
                     except (json.JSONDecodeError, IndexError):
