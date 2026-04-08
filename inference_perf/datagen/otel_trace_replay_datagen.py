@@ -631,8 +631,6 @@ class OTelChatCompletionAPIData(ChatCompletionAPIData):
         lora_adapter: Optional[str] = None,
     ) -> OTelInferenceInfo:
         """Process the LLM response, capture output text, and register it."""
-        import sys
-        print(f"OTEL_DEBUG process_response event={self.event_id} streaming={config.streaming}", file=sys.stderr, flush=True)
         output_text: str = ""
 
         if config.streaming:
