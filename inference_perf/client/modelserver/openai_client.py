@@ -290,30 +290,19 @@ class openAIModelServerClientSession(ModelServerClientSession):
                 async with self.session.post(self.client.uri + data.get_route(), headers=headers, data=request_data) as resp:
                     response = resp
                     try:
-                        # Read response body once to avoid double-read issue
-                        response_content = await response.text()
-
                         if response.status == 200:
+                            # Process response first (streaming needs the body unconsumed)
                             response_info = await data.process_response(
                                 response=response,
                                 config=self.client.api_config,
                                 tokenizer=self.client.tokenizer,
                                 lora_adapter=lora_adapter,
                             )
+                            # Read remaining body after streaming is done (for non-streaming this is the full body)
+                            response_content = await response.text() if not self.client.api_config.streaming else ""
                         else:
-                            # Handle HTTP error responses (status != 200).
-                            #
-                            # For OTel trace replay, process_failure() is called to:
-                            # 1. Mark the session as failed in WorkerSessionTracker
-                            # 2. Call registry.record_failure() to unblock dependent events via EventFailedError
-                            # 3. Immediately notify the main process via session_completion_queue
-                            #
-                            # This ensures that if request X fails and request Y depends on X's output,
-                            # Y raises EventFailedError and skips rather than hanging indefinitely.
-                            #
-                            # Note: The original code only logged errors for non-200 responses without
-                            # calling process_failure(). This special handling for OTelChatCompletionAPIData
-                            # ensures proper failure propagation in trace replay scenarios.
+                            # Read error body for non-200 responses
+                            response_content = await response.text()
 
                             if isinstance(data, OTelChatCompletionAPIData) and response is not None:
                                 error = ErrorResponseInfo(
