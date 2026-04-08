@@ -1,0 +1,33 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: us-central1-docker.pkg.dev
+  IMAGE_NAME: s5y-sidekick-52ee/docker-images/inference-perf
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build and push
+        run: |
+          docker build -f Dockerfile.amd64 -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nano-convo-replay .
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nano-convo-replay

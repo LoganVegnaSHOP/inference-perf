@@ -55,8 +55,12 @@ class ChatCompletionAPIData(InferenceAPIData):
     ) -> InferenceInfo:
         if config.streaming:
             # Use shared streaming parser with chat-specific content extraction
+            def _extract_content(data: dict) -> Optional[str]:
+                delta = data.get("choices", [{}])[0].get("delta", {})
+                return delta.get("content") or delta.get("reasoning_content")
+
             output_text, output_token_times = await parse_sse_stream(
-                response, extract_content=lambda data: data.get("choices", [{}])[0].get("delta", {}).get("content")
+                response, extract_content=_extract_content
             )
 
             prompt_text = "".join([msg.content for msg in self.messages if msg.content])
